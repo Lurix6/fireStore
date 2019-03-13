@@ -1,48 +1,49 @@
 import React, { Component } from 'react';
 import './App.css';
 import Posts from './Posts'
-import { firestore } from './firebase'
+import { firestore, auth, createUserProfileDocument } from './firebase'
 import { collectIdsAndDocs } from './utilities'
+import Authentication from './Authentication'
 
 class App extends Component {
 
   state = {
-    posts: []
+    posts: [],
+    user: null
   }
-  unsubsribe = null
+  unsubsribeFromFireStote = null
+  unsubsribeFromAuth = null
 
     componentDidMount = async () => {
-      this.unsubsribe = firestore.collection('posts').onSnapshot(snapshot => {
+      this.unsubsribeFromFireStote = firestore.collection('posts').onSnapshot(snapshot => {
           const posts = snapshot.docs.map(collectIdsAndDocs)
+          console.log(posts)
           this.setState({posts: posts})
+      })
+
+      this.unsubsribeFromAuth = auth.onAuthStateChanged( userAuth => {
+//        const user = await createUserProfileDocument(userAuth)
+        this.setState({user: userAuth})
       })
 
     }
 
     componentWillUnmount = () => {
-      this.unsubsribe()
+      this.unsubsribeFromFireStote()
     }
 
 
-      handleCreate = async post => {
-       firestore.collection('posts').add(post)
-      }
-
-
-        handleDelatePost = async id => {
-          await firestore.doc(`posts/${id}`).delete()
-        }
 
   render() {
-    console.log('render');
-
-
     return (
-      <div className="App">
-          <Posts posts={this.state.posts} onCreate={this.handleCreate} delatePost={this.handleDelatePost}/>
+      <div className="App" style={{display: 'flex', alignItems: 'center' ,flexDirection: 'column'}}>
+          <Authentication user={this.state.user} />
+          <Posts posts={this.state.posts} user={this.state.user}/>
       </div>
     );
   }
 }
 
 export default App;
+
+//      <Posts posts={this.state.posts}/>
